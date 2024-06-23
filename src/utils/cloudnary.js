@@ -15,12 +15,26 @@ cloudinary.config({
     const responce= await cloudinary.uploader.upload(localFilePath,{
       resource_type:"auto"
     })
-    console.log("file is uploded at cloudnary",responce.url);
-    return response;
+    console.log("file is uploded at cloudnary");
+
+  
+
+    return responce;
   }
   catch(error){
-      fs.unlink(localFilePath)
+      //fs.unlinkSync(localFilePath)//remove the
+      //locally saved temporary file as the uplode operation got failed
+      console.error("Upload failed:", error);
 
+      try {
+        // Remove the locally saved temporary file as the upload operation failed
+        await fs.unlink(localFilePath);
+        console.log("Local file removed after failed upload");
+      } catch (unlinkError) {
+        console.error("Failed to remove local file:", unlinkError);
+      }
+  
+      return null;
       return null;
   }
     

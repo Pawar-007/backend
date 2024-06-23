@@ -7,7 +7,7 @@ dotenv.config({
 });
 
 ConnectDB().then(()=>{
-   app.on('erroor',()=>{
+   app.on('error',()=>{
       console.log('error')
       throw error
    })
@@ -17,6 +17,7 @@ ConnectDB().then(()=>{
 }).catch((error)=>{
    console.log(`Error in dataconnection ${error}`)
 });
+
 
 /*
 import  express  from "express";

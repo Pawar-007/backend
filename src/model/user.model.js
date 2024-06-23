@@ -1,5 +1,5 @@
 import mongoose, {Schema , model} from "mongoose";
-import { Jwt } from "jsonwebtoken";
+import  jwt  from "jsonwebtoken";
 import bcrypt from "bcrypt"
 import dotenv from "dotenv"
 dotenv.config()
@@ -32,7 +32,7 @@ const userSchema= new Schema(
       },
       watchHistory:[
            {
-            type:Schema.type.objectID,
+            type:Schema.Types.ObjectId,
             ref:"video"
            }
       ],
@@ -51,12 +51,12 @@ const userSchema= new Schema(
    }
 )
 userSchema.pre("save",async function(next){
-   if(this.isModified("password")){
+   if(!this.isModified("password")){
       next();
    }
    else{
       try{
-         this.password=bcrypt.hash(this.password,10)
+         this.password=await bcrypt.hash(this.password,10)
          next();
       }
       catch(error){
@@ -66,12 +66,12 @@ userSchema.pre("save",async function(next){
    }
 })
 
-userSchema.method.isPasswordCorrect= async function(passward){
-   return await bcrypt.compare(passward,this.passward);
+userSchema.methods.isPasswordCorrect= async function(password){
+   return await bcrypt.compare(password,this.password);
 }
 
 
-userSchema.method.generateAccessToken=  function(){
+userSchema.methods.generateAccessToken=  function(){
    jwt.sign(
       {
         _id:this._id,
@@ -79,10 +79,13 @@ userSchema.method.generateAccessToken=  function(){
         username:this.username,
         fullname:this.fullname
       },
-      process.env.ACTION_TOKEN_SECRET 
+      process.env.ACTION_TOKEN_SECRET ,
+      {
+         expiresIn:process.env.ACTION_TOKEN_EXPIRE
+      }
    )
 }
-userSchema.method.generateRefrenceToken= async function(){
+userSchema.methods.generateRefrenceToken= async function(){
    return jwt.sign(
       {
         _id:this._id,

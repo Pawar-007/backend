@@ -1,9 +1,9 @@
 class ApiResponse {
-   constructor(){
-      this.statuscode=statuscode
-      message="something went wrong",
-      this.message=message;
+   constructor(statuscode,message="something went wrong"){
+      this.statuscode=statuscode,
+      this.message=message,
       this.seccess=statuscode<400
    }
-   
 }
+
+export default ApiResponse;

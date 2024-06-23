@@ -11,6 +11,17 @@ app.use(cros(
 ))
 app.use(express.json({limit:"20kb"}))
 app.use(express.static("public"))
-app.use(express.urlencoded({}))
+app.use(express.urlencoded({limit:"16kb",extended:true}))
 app.use(cookieParser())
+
+
+//import routes
+import userRouter from './routes/user.router.js';
+
+//routes declaration
+
+app.use("/api/v1/users",userRouter)
+
 export {app};
+
+

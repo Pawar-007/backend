@@ -31,7 +31,7 @@ const videoSchema= new Schema(
          require:true,
       },
       owner:{
-         type:Schema.type.objectId,
+         type:Schema.Types.objectId,
          ref:"user"
       }
 
