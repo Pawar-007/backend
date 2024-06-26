@@ -3,7 +3,19 @@ import { ApiError } from '../utils/ApiError.js';
 import { UserModel } from '../model/user.model.js';
 import {uploadOnCloudnary} from '../utils/cloudnary.js'
 import ApiResponse from '../utils/ApiResponse.js'
-const regesterUser=asynchandlar(async  (req,res,next)=>{
+
+const generateAccessAndRefereshToken=async(userId)=>{
+      const user=await UserModel.findOne(userId);
+      const accessToken=await user.generateAccessToken();
+      const refereshToken=await user.generateRefrenceToken();
+
+      user.refereshToken=refereshToken;
+      await  user.save({ValidateBeforeSave:false})
+
+      return {refereshToken,accessToken}
+
+}
+const regesterUser=asynchandlar(async  (req,res)=>{
         //GET user data from frontend
         //valadition -not empty
         //check if user name is already exist
@@ -31,7 +43,6 @@ const regesterUser=asynchandlar(async  (req,res,next)=>{
       const exist= await UserModel.findOne({
          $or:[{username},{email}]
       })
-      console.log("exist  ",exist);
       if(exist){
          throw new ApiError(409,"you are already exist");
          console.log(exist);
@@ -61,8 +72,7 @@ const regesterUser=asynchandlar(async  (req,res,next)=>{
         
       let avatar = await uploadOnCloudnary(avatarLocalPath);
       const coverImg= await uploadOnCloudnary(coverImageLocalPath);
-            
-       console.log("avatar retun through cloudnary"+avatar)     
+             
       if(!avatar){
          throw new ApiError(400,"avatar file is through cloudnary");
       }
@@ -99,5 +109,116 @@ const regesterUser=asynchandlar(async  (req,res,next)=>{
       })
       })
      
+// login user 
+const userLogin = asynchandlar(async (req,res,next)=>{
+           //req.body
+           //check username and email 
+           //password check
+           //access the refresh token 
+           //send cookies
 
-export {regesterUser};
+      const {email,username,password} = req.body;
+      
+     if(!username || !email){
+
+      throw new ApiError(400,"username or email require")
+       }
+
+      const user = await UserModel.findOne({
+         $or:[{username},{email}]
+      })
+      if(!user){
+        throw new ApiError(404,"user is not present in database");
+         }
+
+      const isPasswordCorrect = await user.isPasswordCorrect(password);
+      
+      if(!isPasswordCorrect){
+          throw new ApiError(404,"password is wrong");
+      }
+
+      const {accessToken,refereshToken}=await 
+         generateAccessAndRefereshToken(user._id);
+
+      const logInUser = await UserModel.findById(user._id).
+               select("-password -refereshToken")
+           
+      const options={
+         httpOnly:true,
+         secure : true
+      }
+
+      return res
+      .status(200)
+      .cookie("accessToken" , accessToken , options)
+      .cookie("refereshToken",refereshToken , options)
+      .json(
+           new ApiResponse(
+            200,
+            {
+               user: logInUser,accessToken,refereshToken
+            },
+            
+            "use login succesfully"
+          )
+      )
+})
+
+const logOutUser=asynchandlar(async(req,res)=>{
+   User.findbyIdAndUpdate(
+      req.user.id,
+      {
+         $set:{
+            referenceToken:undefined
+         }
+      },
+      {
+         new:true
+      }
+   )
+    
+   const options={
+      httpOnly:true,
+      secure : true
+   }
+
+   return res
+   .status(200)
+   .clearCookie("accessToken",options)
+   .clearCookie("refereshToken",options)
+   .json(new ApiResponse(200,"user logged out"))
+
+})
+
+const users = asynchandlar(async (req, res, next) => {
+    try {
+        const users = await UserModel.find(); // Exclude sensitive fields
+
+        return res.status(200).json(
+            new ApiResponse(
+                200,
+                users,
+                "Successfully retrieved all users"
+            )
+        );
+    } catch (error) {
+      next(new ApiError(500, error.message || "Failed to retrieve users"));
+    }
+});
+
+const deleteEntry = async(req,res)=>{
+   try {
+      await UserModel.deleteMany(); // This deletes all documents in the UserModel collection
+
+      return res.status(200).json(
+          new ApiResponse(
+              200,
+              null,
+              "Successfully deleted all users"
+          )
+      );
+  } catch (error) {
+      next(new ApiError(500, error.message || "Failed to delete users"));
+  }
+ }
+export {regesterUser,userLogin,logOutUser,users};

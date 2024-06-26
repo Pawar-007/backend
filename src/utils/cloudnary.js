@@ -22,19 +22,9 @@ cloudinary.config({
     return responce;
   }
   catch(error){
-      //fs.unlinkSync(localFilePath)//remove the
+      fs.unlinkSync(localFilePath)//remove the
       //locally saved temporary file as the uplode operation got failed
       console.error("Upload failed:", error);
-
-      try {
-        // Remove the locally saved temporary file as the upload operation failed
-        await fs.unlink(localFilePath);
-        console.log("Local file removed after failed upload");
-      } catch (unlinkError) {
-        console.error("Failed to remove local file:", unlinkError);
-      }
-  
-      return null;
       return null;
   }
     

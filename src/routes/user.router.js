@@ -1,8 +1,8 @@
 import { Router } from "express";
-import { regesterUser } from "../controllers/user.controllers.js";
+import { logOutUser, regesterUser,userLogin,users } from "../controllers/user.controllers.js";
 import { newApi } from "../controllers/news.controllers.js";
 import { upload } from "../middlewares/multer.middlewares.js";
-
+import {verifyJwt} from "../middlewares/auth.middlewares.js";
 
 const router=Router();
 router.route("/regester").post(
@@ -17,6 +17,11 @@ router.route("/regester").post(
       }
    ]),
    regesterUser);
-router.route("/newApi").post(newApi);
+
+router.route("/login").post(userLogin);
+
+router.route("/logout").post(verifyJwt,logOutUser);
+
+router.route("/users").post(users);
 
 export default router;
