@@ -8,13 +8,12 @@ const generateAccessAndRefereshToken=async(userId)=>{
       const user=await UserModel.findOne(userId);
       const accessToken=await user.generateAccessToken();
       const refereshToken=await user.generateRefrenceToken();
-
       user.refereshToken=refereshToken;
       await  user.save({ValidateBeforeSave:false})
 
       return {refereshToken,accessToken}
 
-}
+   }
 const regesterUser=asynchandlar(async  (req,res)=>{
         //GET user data from frontend
         //valadition -not empty
@@ -139,7 +138,10 @@ const userLogin = asynchandlar(async (req,res,next)=>{
 
       const {accessToken,refereshToken}=await 
          generateAccessAndRefereshToken(user._id);
-
+      // console.log({
+      //    "accesstoken":accessToken,
+      //    "refreshtokken":refereshToken
+      // })
       const logInUser = await UserModel.findById(user._id).
                select("-password -refereshToken")
            
@@ -165,7 +167,7 @@ const userLogin = asynchandlar(async (req,res,next)=>{
 })
 
 const logOutUser=asynchandlar(async(req,res)=>{
-   User.findbyIdAndUpdate(
+   const updateUser=await UserModel.findByIdAndUpdate(
       req.user.id,
       {
          $set:{
