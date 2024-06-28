@@ -3,7 +3,7 @@ import { ApiError } from '../utils/ApiError.js';
 import { UserModel } from '../model/user.model.js';
 import {uploadOnCloudnary} from '../utils/cloudnary.js'
 import ApiResponse from '../utils/ApiResponse.js'
-
+import  Jwt  from 'jsonwebtoken';
 const generateAccessAndRefereshToken=async(userId)=>{
       const user=await UserModel.findOne(userId);
       const accessToken=await user.generateAccessToken();
@@ -223,4 +223,55 @@ const deleteEntry = async(req,res)=>{
       next(new ApiError(500, error.message || "Failed to delete users"));
   }
  }
-export {regesterUser,userLogin,logOutUser,users};
+
+const refreshAccessToken=asynchandlar(async(req,res)=>{
+   const incomingAccessToken=req.cookie.refereshToken ||
+   req.body.refereshToken;
+
+   if(!incomingAccessToken){
+      throw new ApiError(401,"unauthorized request")
+   }
+
+   try {
+      const decodedToken=await jwt.verify(
+         incomingAccessToken,
+         process.env.REFRENCE_TOKEN_SCRIPT   
+      )
+      
+      console.log("decodedToken",decodedToken);
+      const user = await UserModel.findById(decodedToken?._id);
+      
+      if(!user){
+         throw new ApiError(401,"invalid refresh token");
+      }
+   
+      if(incomingAccessToken !== user.referenceToken){
+         throw new ApiError(401,"refresh token is expired or used");
+      }
+   
+      const options={
+         httpOnly:true,
+         secure:true
+      }
+   
+      const {accessToken,refereshToken}=await generateAccessAndRefereshToken(user._id);
+   
+      return res
+      .status(200)
+      .cookie("accessToken" , accessToken , options)
+      .cookie("refereshToken",refereshToken , options)
+      .json(
+           new ApiResponse(
+            200,
+            {
+               accessToken ,refereshToken
+            },
+            
+            "access token refresh successfully"
+          )
+      )
+   } catch (error) {
+      throw new ApiError(404,error?.message || "unauthorized refresh token");
+   }
+})
+export {regesterUser,userLogin,logOutUser,refreshAccessToken};
